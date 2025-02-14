@@ -1,31 +1,19 @@
 import typer
 import boto3
-from rich import print  # For better console output
-from rich.table import Table 
+import botocore.exceptions
+from utils import print_table  # Importing the helper function
 from datetime import datetime, timezone
 from typing import List
-import botocore.exceptions
 
 app = typer.Typer()
-
 ec2 = boto3.client('ec2')
 
-from rich.table import Table
-from datetime import datetime, timezone
-
 @app.command()
-def list_instances():
+def list_instance():
     """List all EC2 instances with user who launched them and other details"""
     response = ec2.describe_instances()
-    table = Table(title="EC2 Instances")
-
-    table.add_column("Instance ID", style="cyan", no_wrap=True)
-    table.add_column("Name", style="magenta")
-    table.add_column("Launched By", style="green")
-    table.add_column("State", style="green")
-    table.add_column("Running Time", style="blue")
-    table.add_column("Public IP", style="yellow")
-    table.add_column("Private IP", style="yellow")
+    headers = ["Instance ID", "Name", "Launched By", "State", "Running Time", "Public IP", "Private IP"]
+    rows = []
 
     for reservation in response['Reservations']:
         for instance in reservation['Instances']:
@@ -55,24 +43,66 @@ def list_instances():
             else:
                 running_time_str = '—'
 
-            table.add_row(instance_id, name, launched_by, state, running_time_str, public_ip, private_ip)
+            # Add row to the table
+            rows.append([instance_id, name, launched_by, state, running_time_str, public_ip, private_ip])
 
-    print(table)
+    # Print the table
+    print_table(headers, rows, title="EC2 Instances")
 
 @app.command()
 def start_instance(instance_id: str):
     """Start an EC2 instance"""
+    # Get the username of the AWS user
+    sts = boto3.client('sts')
+    identity = sts.get_caller_identity()
+    arn = identity['Arn']
+    # The ARN can be in the format arn:aws:iam::ACCOUNT-ID:user/username
+    # We extract the username by splitting the ARN
+    username = arn.split('/')[-1]
+
     response = ec2.start_instances(InstanceIds=[instance_id])
-    print(response)
+    instance_info = response['StartingInstances'][0]
+
+    # Extract details of the started instance
+    instance_id = instance_info['InstanceId']
+    previous_state = instance_info['PreviousState']['Name']
+    current_state = instance_info['CurrentState']['Name']
+
+    # Prepare data for the table
+    headers = ["Instance ID", "Previous State", "Current State", "Started By"]
+    rows = [[instance_id, previous_state, current_state, username]]
+
+    # Print the table
+    print_table(headers, rows, title="Started EC2 Instance(s)")
 
 @app.command()
 def stop_instance(instance_id: str):
     """Stop an EC2 instance"""
+    # Get the username of the AWS user
+    sts = boto3.client('sts')
+    identity = sts.get_caller_identity()
+    arn = identity['Arn']
+    # The ARN can be in the format arn:aws:iam::ACCOUNT-ID:user/username
+    # We extract the username by splitting the ARN
+    username = arn.split('/')[-1]
+    
     response = ec2.stop_instances(InstanceIds=[instance_id])
-    print(response)
+    instance_info = response['StoppingInstances'][0]
+
+    # Extract details of the stopped instance
+    instance_id = instance_info['InstanceId']
+    previous_state = instance_info['PreviousState']['Name']
+    current_state = instance_info['CurrentState']['Name']
+
+    # Prepare data for the table
+    headers = ["Instance ID", "Previous State", "Current State", "Stopped By"]
+    rows = [[instance_id, previous_state, current_state, username]]
+
+    # Print the table
+    print_table(headers, rows, title="Stopped EC2 Instance(s)")
 
 @app.command()
-def terminate_instances(
+def terminate_instance(
     instance_ids: List[str] = typer.Argument(..., help="One or more Instance IDs to terminate"),
     force: bool = typer.Option(False, "--force", "-f", help="Force termination without confirmation"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Simulate termination without making changes")
