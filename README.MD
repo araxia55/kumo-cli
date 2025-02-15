@@ -1,6 +1,6 @@
-# Project Name
+# KumoCLI
 
-![Project Logo](path/to/logo.png)
+![Project Logo](./kumo_instance_manager/assets/kumo-penguin.png)
 
 ## Table of Contents
 - [About the Project](#about-the-project)
@@ -14,18 +14,30 @@
 - [License](#license)
 - [Contact](#contact)
 
-## About the Project
-A brief description of what your project does, why you created it, and any interesting background information.
+## About
+The **KumoCLI** Project is a versatile command-line interface tool designed to simplify and streamline interactions with Amazon Web Services (AWS) resources. Named after the Japanese word for "cloud," KumoCLI embodies the spirit of agility and efficiency in cloud management. This tool empowers users to manage their AWS infrastructure seamlessly, leveraging the power of Python, AWS SDK (Boto3) and leveraging the **Typer** module for a great CLI experience.
+
+In a whimsical twist, the project's branding includes a logo featuring a brave penguin warrior slashing through clouds, symbolizing the efficiency and power of KumoCLI in mastering the cloud landscape.
+
+With KumoCLI, cloud management becomes a breeze, allowing users to focus on innovation and growth without getting bogged down by operational complexities. Whether you're an AWS novice or a seasoned cloud architect, KumoCLI offers a user-friendly, powerful interface to manage your cloud resources effortlessly.
 
 ## Features
-- Feature 1: Description of feature 1
-- Feature 2: Description of feature 2
-- Feature 3: Description of feature 3
+- **Instance Management:** Start, stop, and list EC2 instances with detailed information, including instance IDs, states, IP addresses, and more.
+
+- **AMI Management:** List available AMIs, with optional filters for operating system (Linux or Windows) and detailed attributes like architecture and creation date.
+
+- **User Identification:** Retrieve and display the username of the AWS user initiating the actions.
+
+- **Caching:** Optimize performance with cached results to reduce redundant API calls.
+
+- **Customizability:** Specify AWS regions for various operations, enabling flexibility and control over the cloud environment.
+
+- **Rich Output:** Display data in well-organized tables using the rich library, enhancing readability and usability.
 
 ## Getting Started
 
 ### Prerequisites
-List any software, libraries, or tools required to get started with your project.
+
 ```bash
 pip install boto3
 pip install typer
