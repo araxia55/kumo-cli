@@ -2,3 +2,4 @@ typer
 boto3
 rich
 setuptools
+cachetools

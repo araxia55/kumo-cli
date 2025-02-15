@@ -1,18 +1,24 @@
 import typer
-import boto3
-import botocore.exceptions
-from utils import print_table  # Importing the helper function
 from datetime import datetime, timezone
 from typing import List
 
-app = typer.Typer()
-ec2 = boto3.client('ec2')
+import boto3
+import botocore.exceptions
+from cachetools import cached, TTLCache
+from utils import print_table, get_username
 
+cache = TTLCache(maxsize=100, ttl=300)  # Cache up to 100 items for 300 seconds
+
+app = typer.Typer()
+default_region = 'us-east-1'
+ec2 = boto3.client('ec2', region_name=default_region)
+
+@cached(cache)
 @app.command()
-def list_instance():
+def list_instance(region: str = typer.Option("us-east-1", help="AWS region to list the instances in")):
     """List all EC2 instances with user who launched them and other details"""
     response = ec2.describe_instances()
-    headers = ["Instance ID", "Name", "Launched By", "State", "Running Time", "Public IP", "Private IP"]
+    headers = ["Instance ID", "Name", "Launched By", "State", "Running Time", "Public IP", "Private IP", "Region"]
     rows = []
 
     for reservation in response['Reservations']:
@@ -44,21 +50,16 @@ def list_instance():
                 running_time_str = '—'
 
             # Add row to the table
-            rows.append([instance_id, name, launched_by, state, running_time_str, public_ip, private_ip])
+            rows.append([instance_id, name, launched_by, state, running_time_str, public_ip, private_ip, region])
 
     # Print the table
-    print_table(headers, rows, title="EC2 Instances")
+    print_table(headers, rows, title="EC2 Instance(s)")
 
 @app.command()
 def start_instance(instance_id: str):
     """Start an EC2 instance"""
-    # Get the username of the AWS user
-    sts = boto3.client('sts')
-    identity = sts.get_caller_identity()
-    arn = identity['Arn']
-    # The ARN can be in the format arn:aws:iam::ACCOUNT-ID:user/username
-    # We extract the username by splitting the ARN
-    username = arn.split('/')[-1]
+    # Get the username of the AWS user who started the instance(s)
+    username = get_username()
 
     response = ec2.start_instances(InstanceIds=[instance_id])
     instance_info = response['StartingInstances'][0]
@@ -78,13 +79,8 @@ def start_instance(instance_id: str):
 @app.command()
 def stop_instance(instance_id: str):
     """Stop an EC2 instance"""
-    # Get the username of the AWS user
-    sts = boto3.client('sts')
-    identity = sts.get_caller_identity()
-    arn = identity['Arn']
-    # The ARN can be in the format arn:aws:iam::ACCOUNT-ID:user/username
-    # We extract the username by splitting the ARN
-    username = arn.split('/')[-1]
+    # Get the username of the AWS user who stopped the instance(s)
+    username = get_username()
     
     response = ec2.stop_instances(InstanceIds=[instance_id])
     instance_info = response['StoppingInstances'][0]
@@ -107,9 +103,15 @@ def terminate_instance(
     force: bool = typer.Option(False, "--force", "-f", help="Force termination without confirmation"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Simulate termination without making changes")
 ):
+    headers = ["Instance ID", "Previous State", "Current State", "Terminated By"]
+    rows = []
+
     """
     Terminate one or more EC2 instances
     """
+    # Get the username of the AWS user who terminated the instance(s)
+    username = get_username()
+    
     if dry_run:
         typer.echo("Dry run enabled. The following instances would be terminated:")
         for instance_id in instance_ids:
@@ -130,22 +132,11 @@ def terminate_instance(
             instance_id = instance['InstanceId']
             previous_state = instance['PreviousState']['Name']
             current_state = instance['CurrentState']['Name']
-            print(f"[red]Instance {instance_id} changed from {previous_state} to {current_state}[/red]")
+            rows.append([instance_id, previous_state, current_state, username])
+        print_table(headers, rows, title="Terminated EC2 Instance(s)")
     except botocore.exceptions.ClientError as e:
         print(f"[bold red]An error occurred:[/bold red] {e}")
         raise typer.Exit(code=1)
-
-@app.command()
-def create_instance(ami_id: str, instance_type: str):
-    """Create a new EC2 instance"""
-    response = ec2.run_instances(
-        ImageId=ami_id,
-        InstanceType=instance_type,
-        MinCount=1,
-        MaxCount=1
-    )
-    instance_id = response['Instances'][0]['InstanceId']
-    print(f"Instance created with ID: {instance_id}")
 
 @app.command()
 def launch_instance(
@@ -153,18 +144,14 @@ def launch_instance(
     instance_type: str = "t2.micro",        # Default instance type
     key_name: str = "my-key-pair",          # Default key pair name
     security_group: str = "default",        # Default security group
-    instance_name: str = typer.Option("MyEC2Instance", help="Name of the EC2 instance")
+    instance_name: str = typer.Option("MyEC2Instance", help="Name of the EC2 instance"),
+    region: str = typer.Option("us-east-1", help="AWS region to launch the instance in")
 ):
     """Launch a new EC2 instance with additional parameters and default values"""
-    import boto3
-
-    # Get the username of the AWS user
-    sts = boto3.client('sts')
-    identity = sts.get_caller_identity()
-    arn = identity['Arn']
-    # The ARN can be in the format arn:aws:iam::ACCOUNT-ID:user/username
-    # We extract the username by splitting the ARN
-    username = arn.split('/')[-1]
+    header = ["Instance ID", "Name", "Launched By", "Public IP", "Region"]
+    rows = []
+    # Get the username of the AWS user who launched the instance(s)
+    username = get_username()
 
     response = ec2.run_instances(
         ImageId=ami_id,
@@ -183,8 +170,6 @@ def launch_instance(
             }
         ]
     )
-    instance_id = response['Instances'][0]['InstanceId']
-    print(f"Instance launched with ID: {instance_id}, Name: {instance_name}, Launched By: {username}")
     
     instance_id = response['Instances'][0]['InstanceId']
     # Wait for instance to initialize
@@ -194,21 +179,49 @@ def launch_instance(
     reservations = ec2.describe_instances(InstanceIds=[instance_id]).get("Reservations")
     instance = reservations[0]['Instances'][0]
     public_ip = instance.get('PublicIpAddress')
-    print(f"Instance launched with ID: {instance_id}, Name: {instance_name}, Public IP: {public_ip}")
+    rows.append([instance_id, instance_name, username, public_ip, region])
+    print_table(header, rows, title="Launched EC2 Instance(s)")
 
+@cached(cache)
 @app.command()
-def list_amis(owner: str = typer.Argument("self"), os: str = typer.Option(None, help="Filter by operating system: windows or linux")):
-    """List AMI IDs"""
-    filters = []
-    if os:
-        if os.lower() == "windows":
-            filters.append({"Name": "platform", "Values": ["windows"]})
-        elif os.lower() == "linux":
-            filters.append({"Name": "name", "Values": ["*-linux-*", "*-ubuntu-*", "*-centos-*"]})
+def list_amis(
+    os_type: str = typer.Option(None, help="Filter AMIs by operating system (windows or linux)"),
+    owner: str = typer.Option("self", help="Owner of the AMI (self, amazon, or aws-marketplace)")
+):
+    """List all available AMIs, with an optional OS filter"""
+    response = ec2.describe_images(Owners=['amazon'])
+    headers = ["Image ID", "Name", "Creation Date", "State", "OS", "Architecture"]
+    rows = []
 
-    response = ec2.describe_images(Owners=[owner], Filters=filters)
     for image in response['Images']:
-        print(f"AMI ID: {image['ImageId']}, Name: {image['Name']}, Description: {image.get('Description', 'No description')}, Platform: {image.get('Platform', 'linux')}")
+        image_id = image['ImageId']
+        name = image.get('Name', 'Unnamed')
+        creation_date = image['CreationDate']
+        state = image['State']
+        architecture = image.get('Architecture', 'unknown')
+        
+        # Determine the operating system of the AMI
+        platform_details = image.get('PlatformDetails', 'unknown')  # Default to unknown if not specified
+        platform = image.get('Platform', 'unknown')  # Sometimes PlatformDetails may not be present
 
+        print(f"Image ID: {image_id}, Name: {name}, Platform Details: {platform_details}, Platform: {platform}")  # Debugging output
+
+        # Filter by operating system if os_type is provided
+        if os_type and (os_type.lower() not in platform_details.lower() and os_type.lower() not in platform.lower()):
+            continue
+
+        # Add row to the table
+        rows.append([image_id, name, creation_date, state, platform_details or platform, architecture])
+
+        # Sort rows by Creation Date in descending order
+        rows.sort(key=lambda x: x[2], reverse=True)
+
+    if rows:
+        # Print the table
+        print_table(headers, rows, title="Available AMIs")
+    else:
+        print("No AMIs found matching the criteria.")
+
+    
 if __name__ == "__main__":
     app()

@@ -23,3 +23,12 @@ def print_table(headers, rows, title="Table"):
 
     # Print the table to the console
     console.print(table)
+
+def get_username():
+    """Retrieve the username of the AWS user who invoked the function"""
+    sts = boto3.client('sts')
+    identity = sts.get_caller_identity()
+    arn = identity['Arn']
+    # The ARN can be in the format arn:aws:iam::ACCOUNT-ID:user/username
+    username = arn.split('/')[-1]
+    return 
