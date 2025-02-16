@@ -5,7 +5,7 @@ from typing import List
 import boto3
 import botocore.exceptions
 from cachetools import cached, TTLCache
-from utils import print_table, get_username
+from kumo_instance_manager.utils import print_table, get_username
 
 cache = TTLCache(maxsize=100, ttl=300)  # Cache up to 100 items for 300 seconds
 
@@ -52,8 +52,9 @@ def list_instance(region: str = typer.Option("us-east-1", help="AWS region to li
             # Add row to the table
             rows.append([instance_id, name, launched_by, state, running_time_str, public_ip, private_ip, region])
 
-    # Print the table
+    # Print the table for manual testing
     print_table(headers, rows, title="EC2 Instance(s)")
+    return rows  # Return rows for testing
 
 @app.command()
 def start_instance(instance_id: str):
