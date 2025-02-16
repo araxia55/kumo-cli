@@ -138,6 +138,7 @@ def terminate_instance(
         print(f"[bold red]An error occurred:[/bold red] {e}")
         raise typer.Exit(code=1)
 
+
 @app.command()
 def launch_instance(
     ami_id: str = "ami-085ad6ae776d8f09c",  # Default AMI ID
@@ -150,8 +151,9 @@ def launch_instance(
     """Launch a new EC2 instance with additional parameters and default values"""
     header = ["Instance ID", "Name", "Launched By", "Public IP", "Region"]
     rows = []
+    ec2 = boto3.client('ec2', region_name=region)
     # Get the username of the AWS user who launched the instance(s)
-    username = get_username()
+    username = get_username() or 'Unknown'  # Replace None with 'Unknown'
 
     response = ec2.run_instances(
         ImageId=ami_id,
@@ -181,6 +183,7 @@ def launch_instance(
     public_ip = instance.get('PublicIpAddress')
     rows.append([instance_id, instance_name, username, public_ip, region])
     print_table(header, rows, title="Launched EC2 Instance(s)")
+
 
 @cached(cache)
 @app.command()

@@ -1,3 +1,4 @@
+import boto3
 from rich.table import Table 
 from rich.console import Console
 
@@ -31,4 +32,4 @@ def get_username():
     arn = identity['Arn']
     # The ARN can be in the format arn:aws:iam::ACCOUNT-ID:user/username
     username = arn.split('/')[-1]
-    return 
+    return username
