@@ -12,14 +12,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 # Now you can import the list_instance function
 from kumo_instance_manager.kumo import list_instance
 
-@pytest.fixture
-def mock_boto_client():
-    with patch('kumo_instance_manager.kumo.boto3.client') as mock_boto_client:
-        yield mock_boto_client
-
-# Mocking AWS EC2 service
 @mock_ec2
-def test_list_instance_structure(mock_boto_client):
+def test_list_instance_structure():
     # Set up mock EC2 client and create instances
     ec2 = boto3.client('ec2', region_name='us-east-1')
     ec2.run_instances(
