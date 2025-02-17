@@ -12,6 +12,10 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 # Now you can import the list_instance function
 from kumo_instance_manager.kumo import list_instance
 
+# Initialise default region
+def initialize_boto3_client(service, region='us-east-1'):
+    return boto3.client(service, region_name=region)
+
 @mock_ec2
 def test_list_instance_structure():
     # Set up mock EC2 client and create instances
