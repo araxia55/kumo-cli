@@ -5,7 +5,7 @@ from typing import List
 import boto3
 import botocore.exceptions
 from cachetools import cached, TTLCache
-from kumo_instance_manager.utils import print_table, get_username
+from kumo_instance_manager.utils import print_table, get_username, initialize_boto3_client
 
 cache = TTLCache(maxsize=100, ttl=300)  # Cache up to 100 items for 300 seconds
 
@@ -17,6 +17,7 @@ ec2 = boto3.client('ec2', region_name=default_region)
 @app.command()
 def list_instance(region: str = typer.Option("us-east-1", help="AWS region to list the instances in")):
     """List all EC2 instances with user who launched them and other details"""
+    ec2 = initialize_boto3_client('ec2', region)
     response = ec2.describe_instances()
     headers = ["Instance ID", "Name", "Launched By", "State", "Running Time", "Public IP", "Private IP", "Region"]
     rows = []

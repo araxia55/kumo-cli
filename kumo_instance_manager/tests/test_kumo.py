@@ -1,10 +1,9 @@
 import sys
 import os
-from unittest.mock import patch
 import pytest
 from datetime import datetime, timezone
 from moto import mock_ec2
-import boto3
+from kumo_instance_manager.utils import initialize_boto3_client
 
 # Add the project directory to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -12,14 +11,10 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 # Now you can import the list_instance function
 from kumo_instance_manager.kumo import list_instance
 
-# Initialise default region
-def initialize_boto3_client(service, region='us-east-1'):
-    return boto3.client(service, region_name=region)
-
 @mock_ec2
 def test_list_instance_structure():
     # Set up mock EC2 client and create instances
-    ec2 = boto3.client('ec2', region_name='us-east-1')
+    ec2 = initialize_boto3_client('ec2', region='us-east-1')
     ec2.run_instances(
         ImageId='ami-085ad6ae776d8f09c',
         MinCount=1,

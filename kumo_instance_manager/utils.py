@@ -33,3 +33,7 @@ def get_username():
     # The ARN can be in the format arn:aws:iam::ACCOUNT-ID:user/username
     username = arn.split('/')[-1]
     return username
+
+# Initialise default region
+def initialize_boto3_client(service, region='us-east-1'):
+    return boto3.client(service, region_name=region)
