@@ -4,3 +4,4 @@ rich
 setuptools
 cachetools
 pytest
+moto
