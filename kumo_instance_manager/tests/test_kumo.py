@@ -8,13 +8,21 @@ from datetime import datetime, timezone
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Now you can import the list_instance function
-from kumo import list_instance
+from kumo_instance_manager.kumo import list_instance
 
 # Mocking the boto3 client
 @pytest.fixture
 def mock_boto_client():
-    with patch('kumo.boto3.client') as mock_boto_client:
+    with patch('kumo_instance_manager.kumo.boto3.client') as mock_boto_client:
         yield mock_boto_client
+
+# Mocking AWS credentials
+@pytest.fixture(autouse=True)
+def mock_aws_creds(monkeypatch):
+    monkeypatch.setenv('AWS_ACCESS_KEY_ID', 'testing')
+    monkeypatch.setenv('AWS_SECRET_ACCESS_KEY', 'testing')
+    monkeypatch.setenv('AWS_SECURITY_TOKEN', 'testing')
+    monkeypatch.setenv('AWS_SESSION_TOKEN', 'testing')
 
 # Test function for list_instance with structure assertions
 def test_list_instance_structure(mock_boto_client):
