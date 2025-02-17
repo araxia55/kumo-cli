@@ -4,6 +4,7 @@ from unittest.mock import patch
 import pytest
 from datetime import datetime, timezone
 from moto import mock_ec2
+import boto3
 
 # Add the project directory to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
