@@ -152,7 +152,7 @@ def launch_instance(
     volume_size: int = typer.Option(5, help="Size of the root volume in GiB")
 ):
     """Launch a new EC2 instance with additional parameters and default values"""
-    header = ["Instance ID", "Name", "Launched By", "Public IP", "Region"]
+    header = ["Instance ID", "Name", "Launched By", "Public IP", "Region", "Volume Size (GiB)"]
     rows = []
     ec2 = boto3.client('ec2', region_name=region)
     # Get the username of the AWS user who launched the instance(s)
@@ -165,7 +165,16 @@ def launch_instance(
         SecurityGroups=[security_group],
         MinCount=1,
         MaxCount=1,
-        VolumeSize=volume_size,
+        BlockDeviceMappings=[
+            {
+                'DeviceName': '/dev/sdh',
+                'Ebs': {
+                    'VolumeSize': volume_size,
+                    'DeleteOnTermination': True,
+                    'VolumeType': 'gp2'
+                }
+            }
+        ],
         TagSpecifications=[
             {
                 'ResourceType': 'instance',
@@ -185,7 +194,7 @@ def launch_instance(
     reservations = ec2.describe_instances(InstanceIds=[instance_id]).get("Reservations")
     instance = reservations[0]['Instances'][0]
     public_ip = instance.get('PublicIpAddress')
-    rows.append([instance_id, instance_name, username, public_ip, region])
+    rows.append([instance_id, instance_name, username, public_ip, region, volume_size])
     print_table(header, rows, title="Launched EC2 Instance(s)")
 
 

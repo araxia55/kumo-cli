@@ -5,7 +5,7 @@ from rich.console import Console
 def print_table(headers, rows, title="Table"):
     """
     Prints a table to the console using the rich library.
-
+    
     Args:
         headers (list): List of column headers.
         rows (list): List of rows, where each row is a list of cell values.
@@ -20,6 +20,8 @@ def print_table(headers, rows, title="Table"):
 
     # Add rows to the table
     for row in rows:
+        # Convert all items in rows to strings
+        row = [str(cell) for cell in row]
         table.add_row(*row)
 
     # Print the table to the console
