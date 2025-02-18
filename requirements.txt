@@ -4,6 +4,6 @@ setuptools
 cachetools
 pytest
 # Pinned version to mock AWS services
-boto3==1.18.24
-botocore==1.22.24
-moto==2.2.12
+boto3==1.20.20
+botocore==1.23.20
+moto==2.2.1
