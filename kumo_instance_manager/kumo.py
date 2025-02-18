@@ -148,7 +148,8 @@ def launch_instance(
     key_name: str = "my-key-pair",          # Default key pair name
     security_group: str = "default",        # Default security group
     instance_name: str = typer.Option("MyEC2Instance", help="Name of the EC2 instance"),
-    region: str = typer.Option("us-east-1", help="AWS region to launch the instance in")
+    region: str = typer.Option("us-east-1", help="AWS region to launch the instance in"),
+    volume_size: int = typer.Option(5, help="Size of the root volume in GiB")
 ):
     """Launch a new EC2 instance with additional parameters and default values"""
     header = ["Instance ID", "Name", "Launched By", "Public IP", "Region"]
@@ -164,6 +165,7 @@ def launch_instance(
         SecurityGroups=[security_group],
         MinCount=1,
         MaxCount=1,
+        VolumeSize=volume_size,
         TagSpecifications=[
             {
                 'ResourceType': 'instance',
