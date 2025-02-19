@@ -20,9 +20,9 @@ In a whimsical twist, the project's branding includes a logo featuring a brave p
 With KumoCLI, cloud management becomes a breeze, allowing users to focus on innovation and growth without getting bogged down by operational complexities. Whether you're an AWS novice or a seasoned cloud architect, KumoCLI offers a user-friendly, powerful interface to manage your cloud resources effortlessly.
 
 ## Features
-- **Instance Management:** Start, stop, and list EC2 instances with detailed information, including instance IDs, states, IP addresses, and more.
+- **Instance Management:** Launch, Start, stop, and list EC2 instances with detailed information, including instance IDs, states, IP addresses, and more.
 
-- **AMI Management:** List available AMIs, with optional filters for operating system (Linux or Windows) and detailed attributes like architecture and creation date.
+- **AMI Management:** List available AMIs, with optional filters for operating system (Linux or Windows), Image Location and detailed attributes like architecture and creation date.
 
 - **User Identification:** Retrieve and display the username of the AWS user initiating the actions.
 
@@ -141,7 +141,7 @@ $ kumo-cli launch-instance --instance-name kumoInstance
 │ i-0115fa7ba4ed9663a │ kumoInstance │ administrator-ganbatte │ 3.82.109.207 │ us-east-1 │
 └─────────────────────┴──────────────┴────────────────────────┴──────────────┴───────────┘
 
-# List EC2 instances
+# Stop EC2 instances
 
 $ kumo-cli stop-instance i-0115fa7ba4ed9663a
 
@@ -152,6 +152,34 @@ $ kumo-cli stop-instance i-0115fa7ba4ed9663a
 │ i-0115fa7ba4ed9663a │ running        │ stopping      │ administrator-ganbatte │
 └─────────────────────┴────────────────┴───────────────┴────────────────────────┘
 
+# List AMI Images 
+
+$ kumo-cli list-amis --os-type windows --help
+Initializing Kumo CLI package...
+
+List all available AMIs, with an optional OS, Architecture, Image Region filter, etc.
+
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ --os-type                    TEXT  Filter AMIs by operating system (windows or linux) [default: None]                                                                                                                                                                                    │
+│ --owner                      TEXT  Owner of the AMI (self, amazon, or aws-marketplace) [default: self]                                                                                                                                                                                   │
+│ --architecture               TEXT  Filter AMIs by architecture (i386|x86_64|arm64|x86_64_mac|arm64_mac) [default: None]                                                                                                                                                                  │
+│ --source-image-region        TEXT  Filter AMIs by image region location [default: us-east-1]                                                                                                                                                                                             │
+│ --help                             Show this message and exit.                                                                                                                                                                                                                           │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+# Sample output:
+
+$ kumo-cli list-amis --os-type windows --architecture x86_64
+
+┏━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┓
+┃ Image ID              ┃ Name                                                                                              ┃ Creation Date            ┃ State     ┃ OS                                 ┃ Architecture ┃ Image Region ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━┩
+│ ami-55555555555555555 │ Windows_Server-2022-English-Full-ECS_Optimized-2025.02.14                                         │ 2025-02-18T16:19:21.000Z │ available │ Windows                            │ x86_64       │ us-east-1    │
+│ ami-44444444444444444 │ Windows_Server-2022-English-Core-ECS_Optimized-2025.02.14                                         │ 2025-02-18T16:19:20.000Z │ available │ Windows                            │ x86_64       │ us-east-1    │
+│ ami-33333333333333333 │ Windows_Server-2019-English-Full-ECS_Optimized-2025.02.14                                         │ 2025-02-18T16:19:18.000Z │ available │ Windows                            │ x86_64       │ us-east-1    │
+│ ami-22222222222222222 │ Windows_Server-2019-English-Core-ECS_Optimized-2025.02.14                                         │ 2025-02-18T16:19:17.000Z │ available │ Windows                            │ x86_64       │ us-east-1    │
+│ ami-11111111111111111 │ Windows_Server-2016-English-Full-ECS_Optimized-2025.02.14                                         │ 2025-02-18T16:19:16.000Z │ available │ Windows                            │ x86_64       │ us-east-1    │
+└───────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────┴──────────────────────────┴───────────┴────────────────────────────────────┴──────────────┴──────────────┘
 ```
 ## Contributing
 ## Guidelines for contributing to the project.

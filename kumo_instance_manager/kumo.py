@@ -143,13 +143,14 @@ def terminate_instance(
 
 @app.command()
 def launch_instance(
-    ami_id: str = "ami-085ad6ae776d8f09c",  # Default AMI ID
-    instance_type: str = "t2.micro",        # Default instance type
+    ami_id: str = "ami-053a45fff0a704a47",  # Default AMI ID
+    instance_type: str = typer.Option("t2.micro", help="Type of EC2 instance (https://aws.amazon.com/ec2/instance-types/)"), # Default instance type
     key_name: str = "my-key-pair",          # Default key pair name
     security_group: str = "default",        # Default security group
     instance_name: str = typer.Option("MyEC2Instance", help="Name of the EC2 instance"),
     region: str = typer.Option("us-east-1", help="AWS region to launch the instance in"),
-    volume_size: int = typer.Option(5, help="Size of the root volume in GiB")
+    volume_size: int = typer.Option(5, help="Size of the root volume in GiB"),
+    dry_run: bool = typer.Option(False, help="Simulate instance launch without making changes")
 ):
     """Launch a new EC2 instance with additional parameters and default values"""
     header = ["Instance ID", "Name", "Launched By", "Public IP", "Region", "Volume Size (GiB)"]
@@ -165,6 +166,7 @@ def launch_instance(
         SecurityGroups=[security_group],
         MinCount=1,
         MaxCount=1,
+        DryRun=dry_run,
         BlockDeviceMappings=[
             {
                 'DeviceName': '/dev/sdh',
@@ -202,11 +204,13 @@ def launch_instance(
 @app.command()
 def list_amis(
     os_type: str = typer.Option(None, help="Filter AMIs by operating system (windows or linux)"),
-    owner: str = typer.Option("self", help="Owner of the AMI (self, amazon, or aws-marketplace)")
+    owner: str = typer.Option("self", help="Owner of the AMI (self, amazon, or aws-marketplace)"),
+    architecture: str = typer.Option(None, help="Filter AMIs by architecture (i386|x86_64|arm64|x86_64_mac|arm64_mac)"),
+    source_image_region: str = typer.Option("us-east-1", help="Filter AMIs by image region location")
 ):
-    """List all available AMIs, with an optional OS filter"""
+    """List all available AMIs, with an optional OS, Architecture, Image Region filter, etc."""
     response = ec2.describe_images(Owners=['amazon'])
-    headers = ["Image ID", "Name", "Creation Date", "State", "OS", "Architecture"]
+    headers = ["Image ID", "Name", "Creation Date", "State", "OS", "Architecture", "Image Region"]
     rows = []
 
     for image in response['Images']:
@@ -215,19 +219,20 @@ def list_amis(
         creation_date = image['CreationDate']
         state = image['State']
         architecture = image.get('Architecture', 'unknown')
+        source_image_region = image.get('SourceImageRegion', 'unknown')
         
         # Determine the operating system of the AMI
         platform_details = image.get('PlatformDetails', 'unknown')  # Default to unknown if not specified
         platform = image.get('Platform', 'unknown')  # Sometimes PlatformDetails may not be present
 
-        print(f"Image ID: {image_id}, Name: {name}, Platform Details: {platform_details}, Platform: {platform}")  # Debugging output
+        # print(f"Image ID: {image_id}, Name: {name}, Platform Details: {platform_details}, Platform: {platform}")  # Debugging output
 
         # Filter by operating system if os_type is provided
         if os_type and (os_type.lower() not in platform_details.lower() and os_type.lower() not in platform.lower()):
             continue
 
         # Add row to the table
-        rows.append([image_id, name, creation_date, state, platform_details or platform, architecture])
+        rows.append([image_id, name, creation_date, state, platform_details or platform, architecture, source_image_region])
 
         # Sort rows by Creation Date in descending order
         rows.sort(key=lambda x: x[2], reverse=True)

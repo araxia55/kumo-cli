@@ -4,6 +4,6 @@
 __version__ = "0.1"
 
 # Initialization code
-print("Initializing Kumo CLI package")
+print("Initializing Kumo CLI package...")
 
 __all__ = ["kumo", "utils"]
